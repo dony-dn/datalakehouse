@@ -22,6 +22,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -259,8 +260,100 @@ services:
     networks:
       - datalakehouse-network
 
+#################################################################
+# MinIO
+#################################################################
+  minio:
+      image: minio/minio
+      container_name: minio
+      command: server /data --console-address ":9001"
+      ports:
+        - "9000:9000"
+        - "9001:9001"
+      environment:
+        MINIO_ROOT_USER: $MINIO_ROOT_USER
+        MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
+      volumes:
+        - minio_data:/data
+      networks:
+        - datalakehouse-network
+
+#################################################################
+# Nessie
+#################################################################
+  nessie:
+    image: projectnessie/nessie
+    container_name: nessie
+    ports:
+      - "19120:19120"
+    environment:
+      QUARKUS_PROFILE: in-memory
+    networks:
+      - datalakehouse-network
+
+#################################################################
+# spark-iceberg
+#################################################################
+  spark-iceberg:
+    image: tabulario/spark-iceberg
+    container_name: spark-iceberg
+    build: spark/
+    environment:
+      - CATALOG_TYPE=nessie
+      - NESSIE_URI=http://nessie:19120/api/v1
+      - WAREHOUSE=s3://my-iceberg-warehouse/
+      - AWS_ACCESS_KEY_ID=$ICEBERG_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$ICEBERG_ASECRET_ACCESS_KEY
+      - AWS_REGION=us-east-1
+    ports:
+      - 8888:8888
+      - 8081:8080
+      - 10000:10000
+      - 10001:10001
+    volumes:
+      - warehouse:/home/iceberg/warehouse
+      - notebooks:/home/iceberg/notebooks/notebooks
+    depends_on:
+      - rest
+      - minio
+      - nessie
+    networks:
+      - datalakehouse-network
+
+#################################################################
+# iceberg-rest
+#################################################################
+  rest:
+    image: apache/iceberg-rest-fixture
+    container_name: iceberg-rest
+    ports:
+      - 8181:8181
+    environment:
+      - AWS_ACCESS_KEY_ID=$ICEBERG_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$ICEBERG_ASECRET_ACCESS_KEY
+      - AWS_REGION=us-east-1
+      - CATALOG_WAREHOUSE=s3://warehouse/
+      - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+      - CATALOG_S3_ENDPOINT=http://minio:9000
+    networks:
+      - datalakehouse-network
+
+#################################################################
+# trino
+#################################################################
+  trino:
+    image: trinodb/trino
+    container_name: trino
+    ports:
+      - "8082:8080"
+    networks:
+      - datalakehouse-network
+
 volumes:
   airflow-db-volume:
+  minio_data:
+  warehouse:
+  notebooks:
 
 networks:
   datalakehouse-network:
