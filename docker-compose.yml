@@ -19,10 +19,10 @@ x-airflow-common:
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -141,6 +141,7 @@ services:
       - datalakehouse-network
 
   airflow-init:
+    container_name: airflow-init
     <<: *airflow-common
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
@@ -216,7 +217,7 @@ services:
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}:/sources
+      - ${AIRFLOW_PROJ_DIR:-.}/airflow:/sources
     networks:
       - datalakehouse-network
 
@@ -264,20 +265,60 @@ services:
 # MinIO
 #################################################################
   minio:
-      image: minio/minio
-      container_name: minio
-      command: server /data --console-address ":9001"
-      ports:
-        - "9000:9000"
-        - "9001:9001"
-      environment:
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      volumes:
-        - minio_data:/data
-      networks:
-        - datalakehouse-network
+    image: minio/minio
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - datalakehouse-network
 
+
+#################################################################
+# MinIO Client
+#################################################################
+  mc:
+    depends_on:
+      - minio
+    image: minio/mc
+    container_name: mc
+    environment:
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - AWS_REGION=us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+
+      if /usr/bin/mc ls minio | grep -q \"warehouse\"; then
+          echo \"Bucket 'warehouse' already exists.\"
+          /usr/bin/mc rm -r --force minio/warehouse
+      else
+          echo \"Creating bucket 'warehouse'...\"
+          /usr/bin/mc mb minio/warehouse
+          echo \"Bucket 'warehouse' created successfully.\"
+          /usr/bin/mc anonymous set public minio/warehouse
+      fi;
+
+      if /usr/bin/mc ls minio | grep -q \"seed\"; then
+          echo \"Bucket 'seed' already exists.\"
+          /usr/bin/mc rm -r --force minio/seed
+      else
+          echo \"Creating bucket 'seed'...\"
+          /usr/bin/mc mb minio/seed
+          echo \"Bucket 'seed' created successfully.\"
+          /usr/bin/mc anonymous set public minio/seed
+      fi;
+      exit 0;
+      "      
+    networks:
+      - datalakehouse-network
 #################################################################
 # Nessie
 #################################################################
@@ -287,7 +328,18 @@ services:
     ports:
       - "19120:19120"
     environment:
-      QUARKUS_PROFILE: in-memory
+      - nessie.version.store.type=IN_MEMORY
+      - nessie.catalog.default-warehouse=warehouse
+      - nessie.catalog.warehouses.warehouse.location=s3a://warehouse/
+      - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
+      - nessie.catalog.service.s3.default-options.path-style-access=true
+      - nessie.catalog.service.s3.default-options.access-key=urn:nessie-secret:quarkus:nessie.catalog.secrets.access-key
+      - nessie.catalog.secrets.access-key.name=${MINIO_ROOT_USER}
+      - nessie.catalog.secrets.access-key.secret=${MINIO_ROOT_PASSWORD}
+      - nessie.catalog.service.s3.default-options.region=us-east-1
+      - nessie.server.authentication.enabled=false
+    depends_on:
+      - minio
     networks:
       - datalakehouse-network
 
@@ -297,13 +349,14 @@ services:
   spark-iceberg:
     image: tabulario/spark-iceberg
     container_name: spark-iceberg
-    build: spark/
+    # build: spark/
     environment:
       - CATALOG_TYPE=nessie
-      - NESSIE_URI=http://nessie:19120/api/v1
-      - WAREHOUSE=s3://my-iceberg-warehouse/
-      - AWS_ACCESS_KEY_ID=${ICEBERG_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${ICEBERG_ASECRET_ACCESS_KEY}
+      - NESSIE_URI=http://nessie:19120/api/v2
+      - WAREHOUSE=s3a://warehouse/
+      - AWS_S3_ENDPOINT=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_USER}
       - AWS_REGION=us-east-1
     ports:
       - 8888:8888
@@ -312,13 +365,24 @@ services:
       - 10001:10001
     volumes:
       - warehouse:/home/iceberg/warehouse
-      - notebooks:/home/iceberg/notebooks/notebooks
+      - ${SPARK_PROJ_DIR:-.}/notebooks:/home/iceberg/notebooks/notebooks
+      - ${SPARK_PROJ_DIR:-.}/entrypoint.sh:/opt/spark/entrypoint.sh
+      - ${SPARK_PROJ_DIR:-.}/spark-defaults.conf:/opt/spark/spark-defaults.conf
     depends_on:
       - rest
       - minio
       - nessie
     networks:
       - datalakehouse-network
+    # entrypoint: /bin/sh
+    # command: >
+    #   -c "
+    #   echo \"
+    #   spark.sql.catalog.demo.io-impl         org.apache.iceberg.aws.s3.S3FileIO \n
+    #   spark.sql.catalog.demo.warehouse       s3://warehouse \n
+    #   spark.sql.catalog.demo.s3.endpoint     http://minio:9000 \n
+    #   \" >> /opt/spark/conf/spark-defaults.conf && ./entrypoint.sh notebook
+    #   "      
 
 #################################################################
 # iceberg-rest
@@ -330,7 +394,7 @@ services:
       - 8181:8181
     environment:
       - AWS_ACCESS_KEY_ID=${ICEBERG_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${ICEBERG_ASECRET_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${ICEBERG_SECRET_ACCESS_KEY}
       - AWS_REGION=us-east-1
       - CATALOG_WAREHOUSE=s3://warehouse/
       - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
@@ -368,4 +432,4 @@ volumes:
 
 networks:
   datalakehouse-network:
-    external: true
+    driver: bridge

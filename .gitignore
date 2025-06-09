@@ -1,2 +1,4 @@
 .env
 airflow/logs/*
+spark/notebooks/.ipynb_checkpoints
+datalake/*
