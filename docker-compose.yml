@@ -367,8 +367,6 @@ services:
     volumes:
       - warehouse:/home/iceberg/warehouse
       - ${SPARK_PROJ_DIR:-.}/notebooks:/home/iceberg/notebooks/notebooks
-      # - ${SPARK_PROJ_DIR:-.}/entrypoint.sh:/opt/spark/entrypoint.sh
-      # - ${SPARK_PROJ_DIR:-.}/spark-defaults.conf:/opt/spark/spark-defaults.conf
     entrypoint: ["/bin/bash", "-c"]
     command: ["notebook"]
     depends_on:
