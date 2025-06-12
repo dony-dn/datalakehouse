@@ -8,7 +8,6 @@ ADD https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-azure/3.3.1/hadoop-a
 ADD https://repo1.maven.org/maven2/com/azure/azure-storage-blob/12.8.0/azure-storage-blob-12.8.0.jar /opt/spark/jars/ 
 
 # copy default configuration file
-WORKDIR .
 COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 COPY requirements.txt /opt/spark/work-dir/
 
