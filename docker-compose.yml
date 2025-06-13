@@ -268,6 +268,11 @@ services:
     image: minio/minio
     container_name: minio
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -285,7 +290,8 @@ services:
 #################################################################
   mc:
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     image: minio/mc
     container_name: mc
     environment:
@@ -320,6 +326,23 @@ services:
     networks:
       - datalakehouse-network
 #################################################################
+# Nessie Postgresql
+#################################################################
+  nessie-db:
+    image: postgres:latest
+    container_name: nessie-db
+    environment:
+      POSTGRES_DB: nessie
+      POSTGRES_USER: nessie_user
+      POSTGRES_PASSWORD: nessie_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - nessie_db:/var/lib/postgresql/data
+    networks:
+      - datalakehouse-network
+
+#################################################################
 # Nessie
 #################################################################
   nessie:
@@ -328,7 +351,11 @@ services:
     ports:
       - "19120:19120"
     environment:
-      - nessie.version.store.type=IN_MEMORY
+      - NESSIE_VERSION_STORE_TYPE=JDBC
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://nessie-db:5432/nessie
+      - QUARKUS_DATASOURCE_USERNAME=nessie_user
+      - QUARKUS_DATASOURCE_PASSWORD=nessie_pass
+      # - nessie.version.store.type=IN_MEMORY
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3a://warehouse/
       - nessie.catalog.service.s3.default-options.endpoint=http://minio:9000/
@@ -340,6 +367,7 @@ services:
       - nessie.server.authentication.enabled=false
     depends_on:
       - minio
+      - nessie-db
     networks:
       - datalakehouse-network
 
@@ -347,8 +375,11 @@ services:
 # spark-iceberg
 #################################################################
   spark-iceberg:
-    image: my-spark-iceberg
     container_name: spark-iceberg
+    image: my-spark-iceberg
+    build:
+      context: spark
+      dockerfile: Dockerfile
     environment:
       - CATALOG_TYPE=nessie
       - NESSIE_URI=http://nessie:19120/api/v2
@@ -404,6 +435,9 @@ services:
       - 9047:9047 
       - 31010:31010 
       - 45678:45678
+    depends_on:
+      - nessie
+      - minio
     volumes:
       - dremio:/opt/dremio/data
     deploy:
@@ -417,6 +451,7 @@ services:
 
 volumes:
   airflow_db:
+  nessie_db:
   minio_data:
   warehouse:
   notebooks:

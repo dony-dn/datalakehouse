@@ -69,3 +69,22 @@ CREATE TABLE IF NOT EXISTS nessie.silver.customer (
     , DATETIME_INGESTION TIMESTAMP
 ) USING iceberg
 """
+
+# ---------------------------------------------------------------
+sql_select_bronze_currency = """ 
+select 
+    CurrencyAlternateKey as ID_CURRENCY
+    , CurrencyName as NAME_CURRENCY
+    , source_filepath as TEXT_SOURCE_FILEPATH
+    , ingestion_datetime as DATETIME_INGESTION
+from nessie.bronze.currency
+"""
+
+sql_create_silver_currency = """ 
+CREATE TABLE IF NOT EXISTS nessie.silver.customer (
+    ID_CURRENCY STRING
+    , NAME_CURRENCY STRING
+    , TEXT_SOURCE_FILEPATH STRING
+    , DATETIME_INGESTION TIMESTAMP
+) USING iceberg
+"""
