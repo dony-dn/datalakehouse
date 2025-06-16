@@ -6,14 +6,14 @@ select
     , ProductCategory as NAME_PRODUCT_CATEGORY
     , ProductDescription as TEXT_DESCRIPTION
     , Color as NAME_COLOR
-    , StandardCost as AMT_PRODUCT_COST
+    , CAST(StandardCost as DOUBLE) as AMT_PRODUCT_COST
     , source_filepath as TEXT_SOURCE_FILEPATH
-    , ingestion_datetime as DATETIME_INGESTION
-from nessie.bronze.product
+    , CAST(ingestion_datetime as TIMESTAMP) as DATETIME_INGESTION
+from BRONZE.PRODUCT
 """
 
 sql_create_silver_product = """ 
-CREATE TABLE IF NOT EXISTS nessie.silver.product (
+CREATE TABLE IF NOT EXISTS SILVER.PRODUCT (
     ID_PRODUCT STRING
     , NAME_PRODUCT STRING
     , NAME_PRODUCT_SUBCATEGORY STRING
@@ -31,25 +31,25 @@ select
     UserId as ID_USER
     , FirstName as NAME_FIRST
     , LastName as NAME_LAST
-    , BirthDate as DATE_BIRTH
+    , CAST(BirthDate as DATE) as DATE_BIRTH
     , MaritalStatus as TYPE_MARITAL_STATUS
     , Gender as TYPE_GENDER
-    , YearlyIncome as AMT_YEARLY_INCOME
+    , CAST(YearlyIncome as DOUBLE) as AMT_YEARLY_INCOME
     , Education as NAME_EDUCATION
     , Occupation as NAME_OCCUPATION
-    , HouseOwnerFlag as FLAG_HOUSE_OWNER
-    , TotalChildren as NUM_CHILDREN_TOTAL
-    , NumberChildrenAtHome as NUM_CHILDREN_AT_HOME
-    , NumberCarsOwned as NUM_CARS_OWNED
-    , DateFirstPurchase as DATE_FIRST_PURCHASE
+    , CASE WHEN HouseOwnerFlag = "1" THEN TRUE ELSE FALSE END as FLAG_HOUSE_OWNER
+    , CAST(TotalChildren AS INT) as NUM_CHILDREN_TOTAL
+    , CAST(NumberChildrenAtHome AS INT) as NUM_CHILDREN_AT_HOME
+    , CAST(NumberCarsOwned AS INT) as NUM_CARS_OWNED
+    , CAST(DateFirstPurchase AS DATE) as DATE_FIRST_PURCHASE
     , CommuteDistance as TYPE_COMMUTE_DISTANCE
     , source_filepath as TEXT_SOURCE_FILEPATH
-    , ingestion_datetime as DATETIME_INGESTION
-from nessie.bronze.customer
+    , CAST(ingestion_datetime as TIMESTAMP) as DATETIME_INGESTION
+from BRONZE.CUSTOMER
 """
 
 sql_create_silver_customer = """ 
-CREATE TABLE IF NOT EXISTS nessie.silver.customer (
+CREATE TABLE IF NOT EXISTS SILVER.CUSTOMER (
     ID_USER STRING
     , NAME_FIRST STRING
     , NAME_LAST STRING
@@ -76,12 +76,12 @@ select
     CurrencyAlternateKey as ID_CURRENCY
     , CurrencyName as NAME_CURRENCY
     , source_filepath as TEXT_SOURCE_FILEPATH
-    , ingestion_datetime as DATETIME_INGESTION
-from nessie.bronze.currency
+    , CAST(ingestion_datetime as TIMESTAMP) as DATETIME_INGESTION
+from BRONZE.CURRENCY
 """
 
 sql_create_silver_currency = """ 
-CREATE TABLE IF NOT EXISTS nessie.silver.customer (
+CREATE TABLE IF NOT EXISTS SILVER.CURRENCY (
     ID_CURRENCY STRING
     , NAME_CURRENCY STRING
     , TEXT_SOURCE_FILEPATH STRING

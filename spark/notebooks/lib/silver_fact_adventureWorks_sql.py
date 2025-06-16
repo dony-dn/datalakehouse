@@ -15,27 +15,27 @@ with cte_sales_header as
         , source_filepath
         , ingestion_datetime
         , row_number() over(partition by SalesOrderNumber order by SalesOrderLineNumber) as sales_row_number
-    from nessie.bronze.sales
+    from BRONZE.SALES
 )
 select 
     SalesOrderNumber as CODE_SALES_ORDER_NUMBER
     , ProductId as ID_PRODUCT
     , CustomerUsername as ID_CUSTOMER
-    , OrderDate as DATE_ORDER
-    , DueDate as DATE_DUE
-    , ShipDate as DATE_SHIP
+    , CAST(OrderDate as DATE) as DATE_ORDER
+    , CAST(DueDate as DATE) as DATE_DUE
+    , CAST(ShipDate as DATE) as DATE_SHIP
     , SalesTerritoryRegion as NAME_SALES_TERRITORY_REGION
     , SalesTerritoryCountry as NAME_SALES_TERRITORY_COUNTRY
     , SalesTerritoryContinent as NAME_SALES_TERRITORY_CONTINENT
     , Currency as ID_CURRENCY
     , source_filepath as TEXT_SOURCE_FILEPATH
-    , ingestion_datetime as DATETIME_INGESTION
+    , CAST(ingestion_datetime AS TIMESTAMP) as DATETIME_INGESTION
 from cte_sales_header
 where sales_row_number = 1
 """
 
 sql_create_silver_sales_header = """ 
-CREATE TABLE IF NOT EXISTS nessie.silver.sales_header (
+CREATE TABLE IF NOT EXISTS SILVER.SALES_HEADER (
     CODE_SALES_ORDER_NUMBER STRING
     , ID_PRODUCT STRING
     , ID_CUSTOMER STRING
@@ -73,23 +73,23 @@ with cte_sales_detail as
         , AverageRate
         , source_filepath
         , ingestion_datetime
-    from nessie.bronze.sales
+    from BRONZE.SALES
 )
 select 
     SalesOrderNumber as CODE_SALES_ORDER_NUMBER
-    , SalesOrderLineNumber as NUM_SALES_LINE
-    , OrderQuantity as NUM_ORDER_QUANTITY
-    , SalesAmount as AMT_SALES
-    , TaxAmt as AMT_TAX
-    , Freight as NUM_FREIGHT
+    , CAST(SalesOrderLineNumber AS INT) as NUM_SALES_LINE
+    , CAST(OrderQuantity AS INT) as NUM_ORDER_QUANTITY
+    , CAST(SalesAmount AS DOUBLE) as AMT_SALES
+    , CAST(TaxAmt AS DOUBLE) as AMT_TAX
+    , CAST(Freight AS DOUBLE) as NUM_FREIGHT
     , Currency as ID_CURRENCY
     , source_filepath as TEXT_SOURCE_FILEPATH
-    , ingestion_datetime as DATETIME_INGESTION
+    , CAST(ingestion_datetime AS TIMESTAMP) as DATETIME_INGESTION
 from cte_sales_detail
 """
 
 sql_create_silver_sales_detail = """ 
-CREATE TABLE IF NOT EXISTS nessie.silver.sales_detail (
+CREATE TABLE IF NOT EXISTS SILVER.SALES_DETAIL (
     CODE_SALES_ORDER_NUMBER STRING
     , NUM_SALES_LINE INT
     , NUM_ORDER_QUANTITY INT
@@ -105,14 +105,14 @@ CREATE TABLE IF NOT EXISTS nessie.silver.sales_detail (
 sql_select_bronze_currency_rate_history = """ 
 select 
     currency as ID_CURRENCY
-    , date as DATE_CURRENCY_RATE
-    , rate as NUM_CURRENCY_RATE
+    , CAST(date as DATE) as DATE_CURRENCY_RATE
+    , CAST(rate AS DOUBLE) as NUM_CURRENCY_RATE
     , source_filepath as TEXT_SOURCE_FILEPATH
-    , ingestion_datetime as DATETIME_INGESTION
-from nessie.bronze.currency_rate
+    , CAST(ingestion_datetime AS TIMESTAMP) as DATETIME_INGESTION
+from BRONZE.CURRENCY_RATE
 """
 sql_create_silver_currency_rate_history = """ 
-CREATE TABLE IF NOT EXISTS nessie.silver.currency_rate_history (
+CREATE TABLE IF NOT EXISTS SILVER.CURRENCY_RATE_HISTORY (
     ID_CURRENCY STRING
     , DATE_CURRENCY_RATE DATE
     , NUM_CURRENCY_RATE DOUBLE
