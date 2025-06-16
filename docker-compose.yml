@@ -332,9 +332,9 @@ services:
     image: postgres:latest
     container_name: nessie-db
     environment:
-      POSTGRES_DB: ${QUARKUS_DATASOURCE_NAME}
-      POSTGRES_USER: ${QUARKUS_DATASOURCE_USERNAME}
-      POSTGRES_PASSWORD: ${QUARKUS_DATASOURCE_PASSWORD}
+      POSTGRES_DB: ${NESSIE_DB_NAME}
+      POSTGRES_USER: ${NESSIE_DB_USER}
+      POSTGRES_PASSWORD: ${NESSIE_DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -352,9 +352,9 @@ services:
       - "19120:19120"
     environment:
       - NESSIE_VERSION_STORE_TYPE=JDBC
-      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://nessie-db:5432/${QUARKUS_DATASOURCE_NAME}
-      - QUARKUS_DATASOURCE_USERNAME=${QUARKUS_DATASOURCE_USERNAME}
-      - QUARKUS_DATASOURCE_PASSWORD=${QUARKUS_DATASOURCE_PASSWORD}
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://nessie-db:5432/${NESSIE_DB_NAME}
+      - QUARKUS_DATASOURCE_USERNAME=${NESSIE_DB_USER}
+      - QUARKUS_DATASOURCE_PASSWORD=${NESSIE_DB_PASSWORD}
       # - nessie.version.store.type=IN_MEMORY
       - nessie.catalog.default-warehouse=warehouse
       - nessie.catalog.warehouses.warehouse.location=s3a://warehouse/
@@ -427,6 +427,44 @@ services:
       - datalakehouse-network
 
 #################################################################
+# superset-db
+#################################################################
+  superset-db:
+    image: postgres:latest
+    container_name: superset-db 
+    environment:
+      - POSTGRES_USER=${SUPERSET_ADMIN_USER}
+      - POSTGRES_PASSWORD=${SUPERSET_ADMIN_PASS}
+      - POSTGRES_DB=superset
+    volumes:
+      - superset_db:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - datalakehouse-network
+
+#################################################################
+# superset
+#################################################################
+  superset:
+    build:
+      context: ./superset
+      dockerfile: dockerfile
+    container_name: superset
+    depends_on:
+      - superset-db
+    environment:
+      - SUPERSET_ADMIN_USER=${SUPERSET_ADMIN_USER}
+      - SUPERSET_ADMIN_EMAIL=admin@superset.com
+      - SUPERSET_ADMIN_PASS=${SUPERSET_ADMIN_PASS}
+      - SUPERSET_CONFIG_PATH=/app/superset_config.py
+      - SQLALCHEMY_DATABASE_URI=postgresql://${SUPERSET_ADMIN_USER}:${SUPERSET_ADMIN_PASS}@superset-db:5433/superset
+    ports:
+      - '8088:8088'
+    networks:
+      - datalakehouse-network
+
+#################################################################
 # dremio
 #################################################################
   dremio:
@@ -453,6 +491,7 @@ services:
 volumes:
   airflow_db:
   nessie_db:
+  superset_db:
   minio_data:
   warehouse:
   notebooks:

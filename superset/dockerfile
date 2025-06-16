@@ -1,0 +1,19 @@
+FROM apache/superset:latest
+
+USER root
+
+COPY ./superset-init.sh /superset-init.sh
+
+COPY ./superset_config.py /app/
+
+# install requirement
+COPY requirements-local.txt /app/
+RUN pip install -r /app/requirements-local.txt
+
+ENV SUPERSET_CONFIG_PATH /app/superset_config.py
+
+RUN chown superset:superset /superset-init.sh
+RUN chmod +x /superset-init.sh
+
+USER superset
+ENTRYPOINT [ "/bin/sh", "-c", "/superset-init.sh" ]

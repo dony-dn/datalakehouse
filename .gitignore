@@ -1,5 +1,5 @@
 .env
 airflow/logs/*
 spark/notebooks/.ipynb_checkpoints
-*/__pycache__/*
+**/__pycache__/
 *.Trash-0
