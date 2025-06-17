@@ -2,4 +2,7 @@
 airflow/logs/*
 spark/notebooks/.ipynb_checkpoints
 **/__pycache__/
-*.Trash-0
+superset/data/*
+nifi/*
+!nifi/conf
+!nifi/conf/**
