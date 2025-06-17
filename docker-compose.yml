@@ -526,23 +526,20 @@ services:
       - 9047:9047 
       - 31010:31010 
       - 45678:45678
-    depends_on:
-      nessie:
-        condition: service_healthy
-      minio1:
-        condition: service_healthy
-      minio2:
-        condition: service_healthy
+    # depends_on:
+    #   nessie:
+    #     condition: service_healthy
+    #   minio1:
+    #     condition: service_healthy
+    #   minio2:
+    #     condition: service_healthy
     volumes:
-      - /opt/dremio/data:/opt/dremio/data
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+      - dremio_data:/opt/dremio/data
     networks:
       - datalakehouse-network
+
+volumes:
+  dremio_data:
 
 networks:
   datalakehouse-network:

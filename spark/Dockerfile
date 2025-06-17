@@ -15,8 +15,5 @@ COPY requirements.txt /opt/spark/work-dir/
 
 RUN pip install -r /opt/spark/work-dir/requirements.txt
 
-# Set environment variables
-ENV SPARK_CLASSPATH="/opt/spark/jars/*"
-
 
 

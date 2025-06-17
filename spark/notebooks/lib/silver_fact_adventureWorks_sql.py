@@ -19,7 +19,6 @@ with cte_sales_header as
 )
 select 
     SalesOrderNumber as CODE_SALES_ORDER_NUMBER
-    , ProductId as ID_PRODUCT
     , CustomerUsername as ID_CUSTOMER
     , CAST(OrderDate as DATE) as DATE_ORDER
     , CAST(DueDate as DATE) as DATE_DUE
@@ -37,7 +36,6 @@ where sales_row_number = 1
 sql_create_silver_sales_header = """ 
 CREATE TABLE IF NOT EXISTS SILVER.SALES_HEADER (
     CODE_SALES_ORDER_NUMBER STRING
-    , ID_PRODUCT STRING
     , ID_CUSTOMER STRING
     , DATE_ORDER DATE
     , DATE_DUE DATE
@@ -77,6 +75,7 @@ with cte_sales_detail as
 )
 select 
     SalesOrderNumber as CODE_SALES_ORDER_NUMBER
+    , ProductId as ID_PRODUCT
     , CAST(SalesOrderLineNumber AS INT) as NUM_SALES_LINE
     , CAST(OrderQuantity AS INT) as NUM_ORDER_QUANTITY
     , CAST(SalesAmount AS DOUBLE) as AMT_SALES
@@ -91,6 +90,7 @@ from cte_sales_detail
 sql_create_silver_sales_detail = """ 
 CREATE TABLE IF NOT EXISTS SILVER.SALES_DETAIL (
     CODE_SALES_ORDER_NUMBER STRING
+    , ID_PRODUCT STRING
     , NUM_SALES_LINE INT
     , NUM_ORDER_QUANTITY INT
     , AMT_SALES DOUBLE
