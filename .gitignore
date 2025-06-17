@@ -3,7 +3,7 @@ airflow/logs/*
 **/.ipynb_checkpoints
 **/.ipynb_checkpoints/*
 **/__pycache__
-**/__pycache__/**
+**/__pycache__/*
 nifi/*
 !nifi/conf
-!nifi/conf/**
+!nifi/conf/*
