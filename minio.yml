@@ -12,6 +12,7 @@ x-minio-common: &minio-common
   networks:
     - datalakehouse-network
 
+services:
 #################################################################
 # MinIO
 #################################################################
@@ -75,9 +76,6 @@ x-minio-common: &minio-common
       "      
     networks:
       - datalakehouse-network
-      
-volumes:
-  dremio_data:
 
 networks:
   datalakehouse-network:
