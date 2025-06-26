@@ -7,3 +7,6 @@ airflow/logs/*
 nifi/*
 !nifi/conf
 !nifi/conf/*
+**/.Trash-0
+**/.Trash-0/**
+**/__init__.py
