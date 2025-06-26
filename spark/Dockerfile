@@ -13,6 +13,9 @@ ADD https://repo1.maven.org/maven2/org/projectnessie/nessie-integrations/nessie-
 COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 COPY requirements.txt /opt/spark/work-dir/
 
+WORKDIR ..
+COPY data/ /opt/spark/work-dir/data/
+
 RUN pip install -r /opt/spark/work-dir/requirements.txt
 
 
