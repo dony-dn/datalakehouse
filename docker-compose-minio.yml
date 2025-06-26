@@ -1,0 +1,84 @@
+x-minio-common: &minio-common
+  image: minio/minio
+  environment:
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 20s
+  networks:
+    - datalakehouse-network
+
+#################################################################
+# MinIO
+#################################################################
+  minio1:
+    <<: *minio-common
+    container_name: minio1
+    command: server http://minio{1...2}/data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - /opt/minio1/data:/data
+
+  minio2:
+    <<: *minio-common
+    container_name: minio2
+    command: server http://minio{1...2}/data --console-address ":9001"
+    volumes:
+      - /opt/minio2/data:/data
+
+
+#################################################################
+# MinIO Client
+#################################################################
+  mc:
+    depends_on:
+      minio1:
+        condition: service_healthy
+      minio2:
+        condition: service_healthy
+    image: minio/mc
+    container_name: mc
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_REGION: us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio1:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+
+      if /usr/bin/mc ls minio | grep -q \"warehouse\"; then
+          echo \"Bucket 'warehouse' already exists.\"
+          /usr/bin/mc rm -r --force minio/warehouse
+      else
+          echo \"Creating bucket 'warehouse'...\"
+          /usr/bin/mc mb minio/warehouse
+          echo \"Bucket 'warehouse' created successfully.\"
+          /usr/bin/mc anonymous set public minio/warehouse
+      fi;
+
+      if /usr/bin/mc ls minio | grep -q \"seed\"; then
+          echo \"Bucket 'seed' already exists.\"
+          /usr/bin/mc rm -r --force minio/seed
+      else
+          echo \"Creating bucket 'seed'...\"
+          /usr/bin/mc mb minio/seed
+          echo \"Bucket 'seed' created successfully.\"
+          /usr/bin/mc anonymous set public minio/seed
+      fi;
+      exit 0;
+      "      
+    networks:
+      - datalakehouse-network
+      
+volumes:
+  dremio_data:
+
+networks:
+  datalakehouse-network:
+    external: true
