@@ -2,12 +2,12 @@
 s3_bucket = "s3a://seed"
 
 [minio_target]
-s3_bucket = "s3a://warehouse"
+s3_bucket = "s3a://warehouse/staging"
 
 [read_options]
 header = true
 inferSchema = true
-sep = ","
+sep = ";"
 
 [source]
 

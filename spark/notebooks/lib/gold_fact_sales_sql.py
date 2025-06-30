@@ -1,5 +1,5 @@
 sql_create_gold_internet_sales_header = """ 
-CREATE TABLE IF NOT EXISTS GOLD.INTERNET_SALES_HEADER (
+CREATE TABLE IF NOT EXISTS gold.INTERNET_SALES_HEADER (
     CODE_SALES_ORDER_NUMBER STRING
     , ID_CUSTOMER STRING
     , DATE_ORDER DATE
@@ -19,8 +19,8 @@ USING iceberg
 """
 
 sql_merge_gold_internet_sales_header = """ 
-MERGE INTO GOLD.INTERNET_SALES_HEADER as target
---USING SILVER.SALES_HEADER as source
+MERGE INTO gold.INTERNET_SALES_HEADER as target
+--USING silver.SALES_HEADER as source
 USING 
 (
     SELECT 
@@ -39,7 +39,7 @@ USING
         , CURRENT_TIMESTAMP AS DATETIME_INSERTED
         , CURRENT_TIMESTAMP AS DATETIME_UPDATED
     FROM 
-        SILVER.SALES_HEADER
+        silver.SALES_HEADER
 ) as source
 on
 (
@@ -98,7 +98,7 @@ VALUES
 """
 #######################################################################################
 sql_create_gold_internet_sales_detail = """ 
-CREATE TABLE IF NOT EXISTS GOLD.INTERNET_SALES_DETAIL (
+CREATE TABLE IF NOT EXISTS gold.INTERNET_SALES_DETAIL (
     CODE_SALES_ORDER_NUMBER STRING
     , NUM_SALES_LINE STRING
     , ID_PRODUCT STRING
@@ -117,7 +117,7 @@ USING iceberg
 """
 
 sql_merge_gold_internet_sales_detail = """ 
-MERGE INTO GOLD.INTERNET_SALES_DETAIL as target
+MERGE INTO gold.INTERNET_SALES_DETAIL as target
 USING 
 (
     SELECT 
@@ -135,7 +135,7 @@ USING
         , CURRENT_TIMESTAMP AS DATETIME_INSERTED
         , CURRENT_TIMESTAMP AS DATETIME_UPDATED
     FROM 
-        SILVER.SALES_DETAIL
+        silver.SALES_DETAIL
 ) as source
 on
 (

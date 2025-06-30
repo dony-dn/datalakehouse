@@ -7,13 +7,13 @@ select
     , ProductDescription as TEXT_DESCRIPTION
     , Color as NAME_COLOR
     , CAST(StandardCost as DOUBLE) as AMT_PRODUCT_COST
-    , source_filepath as TEXT_SOURCE_FILEPATH
-    , CAST(ingestion_datetime as TIMESTAMP) as DATETIME_INGESTION
-from BRONZE.PRODUCT
+    , file_path as TEXT_SOURCE_FILEPATH
+    , CAST(ingest_timestamp as TIMESTAMP) as DATETIME_INGESTION
+from bronze.PRODUCT
 """
 
 sql_create_silver_product = """ 
-CREATE TABLE IF NOT EXISTS SILVER.PRODUCT (
+CREATE TABLE IF NOT EXISTS silver.PRODUCT (
     ID_PRODUCT STRING
     , NAME_PRODUCT STRING
     , NAME_PRODUCT_SUBCATEGORY STRING
@@ -43,13 +43,13 @@ select
     , CAST(NumberCarsOwned AS INT) as NUM_CARS_OWNED
     , CAST(DateFirstPurchase AS DATE) as DATE_FIRST_PURCHASE
     , CommuteDistance as TYPE_COMMUTE_DISTANCE
-    , source_filepath as TEXT_SOURCE_FILEPATH
-    , CAST(ingestion_datetime as TIMESTAMP) as DATETIME_INGESTION
-from BRONZE.CUSTOMER
+    , file_path as TEXT_SOURCE_FILEPATH
+    , CAST(ingest_timestamp as TIMESTAMP) as DATETIME_INGESTION
+from bronze.CUSTOMER
 """
 
 sql_create_silver_customer = """ 
-CREATE TABLE IF NOT EXISTS SILVER.CUSTOMER (
+CREATE TABLE IF NOT EXISTS silver.CUSTOMER (
     ID_USER STRING
     , NAME_FIRST STRING
     , NAME_LAST STRING
@@ -75,13 +75,13 @@ sql_select_bronze_currency = """
 select 
     CurrencyAlternateKey as ID_CURRENCY
     , CurrencyName as NAME_CURRENCY
-    , source_filepath as TEXT_SOURCE_FILEPATH
-    , CAST(ingestion_datetime as TIMESTAMP) as DATETIME_INGESTION
-from BRONZE.CURRENCY
+    , file_path as TEXT_SOURCE_FILEPATH
+    , CAST(ingest_timestamp as TIMESTAMP) as DATETIME_INGESTION
+from bronze.CURRENCY
 """
 
 sql_create_silver_currency = """ 
-CREATE TABLE IF NOT EXISTS SILVER.CURRENCY (
+CREATE TABLE IF NOT EXISTS silver.CURRENCY (
     ID_CURRENCY STRING
     , NAME_CURRENCY STRING
     , TEXT_SOURCE_FILEPATH STRING

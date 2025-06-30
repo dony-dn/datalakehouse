@@ -1,0 +1,82 @@
+[bronze_product.ingestion]
+source = "staging/adventure_works/product.csv"
+target_table = "product"
+enabled = true
+
+[bronze_product.column_mapping]
+ProductId = "ProductId"
+ProductName = "ProductName"
+ProductSubcategory = "ProductSubcategory"
+ProductCategory = "ProductCategory"
+ProductDescription = "ProductDescription"
+Color = "Color"
+StandardCost = "StandardCost"
+
+# -------------------------------------------------
+[bronze_customer.ingestion]
+source = "staging/adventure_works/customer.csv"
+target_table = "customer"
+enabled = true
+
+[bronze_customer.column_mapping]
+UserId = "UserId"
+FirstName = "FirstName"
+LastName = "LastName"
+BirthDate = "BirthDate"
+MaritalStatus = "MaritalStatus"
+Gender = "Gender"
+YearlyIncome = "YearlyIncome"
+Education = "Education"
+Occupation = "Occupation"
+HouseOwnerFlag = "HouseOwnerFlag"
+TotalChildren = "TotalChildren"
+NumberChildrenAtHome = "NumberChildrenAtHome"
+NumberCarsOwned = "NumberCarsOwned"
+DateFirstPurchase = "DateFirstPurchase"
+CommuteDistance = "CommuteDistance"
+
+# -------------------------------------------------
+[bronze_currency.ingestion]
+source = "staging/adventure_works/currency.csv"
+target_table = "currency"
+enabled = true
+
+[bronze_currency.column_mapping]
+CurrencyAlternateKey = "CurrencyAlternateKey"
+CurrencyName = "CurrencyName"
+
+# -------------------------------------------------
+[bronze_sales.ingestion]
+source = "staging/adventure_works/sales.csv"
+target_table = "sales"
+enabled = true
+
+[bronze_sales.column_mapping]
+SalesOrderNumber = "SalesOrderNumber"
+SalesOrderLineNumber = "SalesOrderLineNumber"
+ProductId = "ProductId"
+CustomerUsername = "CustomerUsername"
+OrderDate = "OrderDate"
+DueDate = "DueDate"
+ShipDate = "ShipDate"
+SalesTerritoryRegion = "SalesTerritoryRegion"
+SalesTerritoryCountry = "SalesTerritoryCountry"
+SalesTerritoryContinent = "SalesTerritoryContinent"
+OrderQuantity = "OrderQuantity"
+SalesAmount = "SalesAmount"
+TaxAmt = "TaxAmt"
+Freight = "Freight"
+Currency = "Currency"
+AverageRate = "AverageRate"
+
+# -------------------------------------------------
+[bronze_currency_rate.ingestion]
+source = "staging/adventure_works/currency_rate.csv"
+target_table = "currency_rate"
+enabled = true
+
+[bronze_currency_rate.column_mapping]
+currency = "currency"
+rate = "rate"
+date = "date"
+# -------------------------------------------------
