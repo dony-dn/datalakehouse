@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.7.8
+    container_name: dbt
+    volumes:
+      - ./dbt:/usr/app/dbt
+    working_dir: /usr/app/dbt
+    entrypoint: ["tail", "-f", "/dev/null"]  # Keeps the container running
